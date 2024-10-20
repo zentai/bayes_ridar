@@ -96,6 +96,11 @@ function drawGrid(size) {
     mapContainer.addEventListener('mouseup', () => { isMouseDown = false; });
     mapContainer.addEventListener('mouseleave', () => { isMouseDown = false; });
 
+    // 添加对触摸事件的处理
+    mapContainer.addEventListener('touchstart', () => { isMouseDown = true; });
+    mapContainer.addEventListener('touchend', () => { isMouseDown = false; });
+    mapContainer.addEventListener('touchcancel', () => { isMouseDown = false; });
+
     // Remove existing grid elements
     gridCells.forEach(cell => mapContainer.removeChild(cell.element));
     gridCells = [];
@@ -123,6 +128,8 @@ function drawGrid(size) {
             cellElement.dataset.id = row * size + col;
             cellElement.addEventListener('mousedown', (e) => startMarking(cellElement, e));
             cellElement.addEventListener('mouseenter', (e) => handleMouseEnter(cellElement, e));
+            // 添加对触摸移动的处理
+            cellElement.addEventListener('touchmove', (e) => handleTouchMove(cellElement, e));
             mapContainer.appendChild(cellElement);
 
             const gridCell = new GridCell(row * size + col, cellElement);
@@ -143,6 +150,17 @@ function handleMouseEnter(cellElement, e) {
     if (isMouseDown) {
         const gridCell = gridCells.find(cell => cell.element === cellElement);
         markCell(gridCell, markOptionSelect.value);
+    }
+}
+
+function handleTouchMove(cellElement, e) {
+    if (isMouseDown) {
+        const touch = e.touches[0];
+        const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (targetElement && targetElement.classList.contains('grid-cell')) {
+            const gridCell = gridCells.find(cell => cell.element === targetElement);
+            markCell(gridCell, markOptionSelect.value);
+        }
     }
 }
 
