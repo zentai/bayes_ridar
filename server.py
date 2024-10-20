@@ -46,7 +46,7 @@ def update_likelihood():
 
 @app.route("/")
 def serve_index():
-    return send_from_directory(app.static_folder, "index.html")
+    return send_from_directory(app.root_path, "index.html")
 
 
 @app.route("/static/<path:filename>")
