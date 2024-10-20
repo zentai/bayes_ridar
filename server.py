@@ -49,9 +49,9 @@ def serve_index():
     return send_from_directory(app.static_folder, "index.html")
 
 
-@app.route("/google")
-def serve_google():
-    return send_from_directory(app.static_folder, "google.html")
+@app.route("/static/<path:filename>")
+def serve_static(filename):
+    return send_from_directory(os.path.join(app.root_path, "static"), filename)
 
 
 if __name__ == "__main__":

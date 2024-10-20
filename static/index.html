@@ -3,248 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bayesian Treasure Hunt - Frontend PoC</title>
-    <style>         #map-container {
-            position: relative;
-            width: 500px;
-            height: 500px;
-            margin: 20px auto;
-            border: 1px solid #ccc;
-        }
-        #map {
-            width: 100%;
-            height: 100%;
-        }
-        .grid-cell {
-            position: absolute;
-            border: 1px solid rgba(0, 0, 0, 0.1);
-        }
-        .controls {
-            text-align: center;
-            margin-top: 20px;
-        }
-        .upload-label {
-            display: block;
-            margin-bottom: 10px;
-        }
-    </style>
-    <script src="static/empiricaldist.js"></script>
+    <title>Treasure Hunt Map</title>
+    <link rel="stylesheet" href="static/style.css">
+    <script type="module" src="static/empiricaldist.js"></script>
+    <script type="module" src="static/script.js"></script>
+    
 </head>
 <body>
-    <h1 style="text-align: center;">Bayesian Treasure Hunt - Frontend PoC</h1>
-    <div class="controls">
-        <label class="upload-label" for="upload-map">Upload a Map:</label>
+    <div id="controls">
+        <label class="upload-label" for="upload-map">Upload Map</label>
         <input type="file" id="upload-map" accept="image/*">
-        <br><br>
-        <label for="grid-size">Grid Resolution:</label>
+        <br>
         <select id="grid-size">
             <option value="10">10 x 10</option>
             <option value="20">20 x 20</option>
             <option value="30">30 x 30</option>
         </select>
         <button id="set-grid">Set Grid</button>
-        <br><br>
-        <label for="mark-option">Mark Option:</label>
+        <br>
         <select id="mark-option">
-            <option value="NO_GO">No-go</option>
-            <option value="NOT_FOUND">Not-found</option>
-            <option value="HIGH_CHANCE">Highchance</option>
+            <option value="NO_GO">No-go (0.001)</option>
+            <option value="ROUGH_SEARCH">Rough Search (0.3)</option>
+            <option value="DETAILED_SEARCH">Detailed Search (0.1)</option>
+            <option value="PROFESSIONAL_TOOLS">Professional Tools Search (0.05)</option>
+            <option value="SIMILAR_TERRAIN">Similar Terrain (1.8)</option>
         </select>
         <button id="recalculate">Recalculate</button>
     </div>
     <div id="map-container">
         <img id="map" src="" alt="Map Image" style="display: none;">
     </div>
-
-    <script>
-        const mapInput = document.getElementById('upload-map');
-        const mapContainer = document.getElementById('map-container');
-        const mapImage = document.getElementById('map');
-        const gridSizeSelect = document.getElementById('grid-size');
-        const setGridButton = document.getElementById('set-grid');
-        const markOptionSelect = document.getElementById('mark-option');
-        const recalculateButton = document.getElementById('recalculate');
-
-        let gridSize = 10;
-        let isMouseDown = false;
-        let gridCells = [];
-
-        const MarkOptions = {
-            NO_GO: '0.1',
-            NOT_FOUND: '0.4',
-            HIGH_CHANCE: '1.5'
-        };
-
-        class GridCell {
-            constructor(id, element) {
-                this.id = id;
-                this.element = element;
-                this.probability = 0;
-                this.markedState = null;
-                this.originalColor = '';
-                this.isUserMarked = false; // Indicates if the cell is user-marked
-            }
-
-            mark(type) {
-                if (this.markedState === type) {
-                    // If the cell is already marked with the same type, unmark it
-                    this.reset();
-                    return;
-                }
-                if (type === 'NO_GO') {
-                    this.markedState = MarkOptions.NO_GO;
-                    this.element.style.backgroundColor = 'rgba(0, 0, 255, 0.6)'; // Blue for No-go
-                } else if (type === 'NOT_FOUND') {
-                    this.markedState = MarkOptions.NOT_FOUND;
-                    this.element.style.backgroundColor = 'rgba(0, 255, 0, 0.6)'; // Green for Not-found
-                } else if (type === 'HIGH_CHANCE') {
-                    this.markedState = MarkOptions.HIGH_CHANCE;
-                    this.element.style.backgroundColor = 'rgba(255, 255, 0, 0.6)'; // Yellow for Highchance
-                }
-                this.isUserMarked = true;
-                this.element.dataset.marked = type;
-            }
-
-            reset() {
-                this.element.style.backgroundColor = this.originalColor;
-                this.element.dataset.marked = '';
-                this.markedState = null;
-                this.isUserMarked = false;
-            }
-
-            updateProbability(probability) {
-                this.probability = probability;
-                let likelihood = Math.min(probability * 35, 1);  // Scale and cap at 1 to prevent overflow
-                const heatColor = 'rgba(255, 0, 0, ' + likelihood + ')';
-                this.originalColor = heatColor;
-                if (!this.isUserMarked) { // Only update color if the cell is not user-marked
-                    this.element.style.backgroundColor = heatColor;
-                }
-                this.element.dataset.previousProbability = probability;
-                this.element.title = 'Posterior Probability: ' + probability.toFixed(2);
-            }
-        }
-
-        // Upload and display map image
-        mapInput.addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    mapImage.src = e.target.result;
-                    mapImage.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        // Set grid resolution and draw grid
-        setGridButton.addEventListener('click', function() {
-            gridSize = parseInt(gridSizeSelect.value);
-            drawGrid(gridSize);
-            // Initialize PMF with new grid size
-            pmf = new Pmf([...Array(gridSize * gridSize).keys()]);
-            // Send grid size to backend
-            // Removed backend grid set request as it's now handled entirely on the frontend
-        });
-
-        function drawGrid(size) {
-            mapContainer.addEventListener('mousedown', () => { isMouseDown = true; });
-            mapContainer.addEventListener('mouseup', () => { isMouseDown = false; });
-            mapContainer.addEventListener('mouseleave', () => { isMouseDown = false; });
-
-            // Remove existing grid elements
-            gridCells.forEach(cell => mapContainer.removeChild(cell.element));
-            gridCells = [];
-
-            if (mapImage.style.display === 'none') {
-                alert('Please upload a map image first.');
-                return;
-            }
-
-            const containerWidth = mapContainer.clientWidth;
-            const containerHeight = mapContainer.clientHeight;
-            const cellSize = Math.min(containerWidth, containerHeight) / size;
-
-            for (let row = 0; row < size; row++) {
-                for (let col = 0; col < size; col++) {
-                    const cellElement = document.createElement('div');
-                    cellElement.classList.add('grid-cell');
-                    cellElement.style.width = `${cellSize}px`;
-                    cellElement.style.height = `${cellSize}px`;
-                    cellElement.style.left = `${col * cellSize}px`;
-                    cellElement.style.top = `${row * cellSize}px`;
-                    cellElement.dataset.id = row * size + col;
-                    cellElement.addEventListener('mousedown', (e) => startMarking(cellElement, e));
-                    cellElement.addEventListener('mouseenter', (e) => handleMouseEnter(cellElement, e));
-                    mapContainer.appendChild(cellElement);
-
-                    const gridCell = new GridCell(row * size + col, cellElement);
-                    gridCells.push(gridCell);
-                }
-            }
-        }
-
-        function startMarking(cellElement, e) {
-            isMouseDown = true;
-            const gridCell = gridCells.find(cell => cell.element === cellElement);
-            const markState = !(gridCell.markedState);
-            markCell(gridCell, markState);
-        }
-
-        function handleMouseEnter(cellElement, e) {
-            if (isMouseDown) {
-                const gridCell = gridCells.find(cell => cell.element === cellElement);
-                markCell(gridCell, true);
-            }
-        }
-
-        function markCell(gridCell, markState) {
-            const markType = markOptionSelect.value;
-            if (markState) {
-                gridCell.mark(markType);
-            } else {
-                gridCell.reset();
-            }
-        }
-
-        // Recalculate and update grid based on new data
-        recalculateButton.addEventListener('click', function() {
-            likelihoodUpdates = {};
-            gridCells.forEach((cell) => {
-                if (cell.markedState !== null) {
-                    if (!likelihoodUpdates[cell.markedState]) {
-                        likelihoodUpdates[cell.markedState] = [];
-                    }
-                    likelihoodUpdates[cell.markedState].push(cell.id);
-                }
-            });
-        
-            // Apply likelihood updates to the PMF
-            for (const [likelihood, cells] of Object.entries(likelihoodUpdates)) {
-                cells.forEach((cellId) => {
-                    pmf.applyLikelihood(cellId, parseFloat(likelihood));
-                });
-            }
-        
-            // Update grid cells with new posterior probabilities
-            const updatedProbabilities = pmf.getProbabilities();
-            gridCells.forEach((cell) => {
-                cell.updateProbability(updatedProbabilities[cell.id]);
-                cell.reset(); // Reset after updating the probability to ensure all cells are ready for new marking
-            });
-        });
-
-        function updateGridColors(probabilities) {
-            const { ps } = probabilities;
-            if (ps.length !== gridCells.length) {
-                console.error('Mismatch between grid elements and probability data.');
-                return;
-            }
-            gridCells.forEach((cell, index) => {
-                cell.updateProbability(ps[index]);
-            });
-        }
-    </script>
 </body>
 </html>

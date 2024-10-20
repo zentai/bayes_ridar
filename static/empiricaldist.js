@@ -1,6 +1,6 @@
 // EmpiricalDist JS Library to simulate Pmf (Probability Mass Function)
 
-class Pmf {
+export class Pmf {
     constructor(values = []) {
         this.values = new Map();
         if (values.length > 0) {
@@ -37,12 +37,20 @@ class Pmf {
     normalize() {
         const total = Array.from(this.values.values()).reduce((acc, prob) => acc + prob, 0);
         if (total > 0) {
+            let maxProbability = -Infinity;  // Initialize to a very low value to find the maximum
             for (let key of this.values.keys()) {
-                this.values.set(key, this.values.get(key) / total);
-            }
-        }
-    }
+                let normalizedValue = this.values.get(key) / total;
+                this.values.set(key, normalizedValue);
 
+                // Track the maximum value while normalizing
+                if (normalizedValue > maxProbability) {
+                    maxProbability = normalizedValue;
+                }
+            }
+            return maxProbability;  // Return the maximum normalized probability value
+        }
+        return 0;  // If total is zero, return 0 to indicate no valid maximum
+    }
     // Return an array of probabilities (ps)
     getProbabilities() {
         return Array.from(this.values.values());
