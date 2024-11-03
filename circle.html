@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Map with Multiple Points</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCssd8F37O1YosY8k0b4lUBmOTLsqGICUo"></script>
+    <script>
+     async function initMap() {
+      const { Map } = await google.maps.importLibrary("maps");
+      const { AdvancedMarkerElement, PinElement } = await google.maps.importLibrary(
+        "marker",
+      );
+      var queryString = window.location.search;
+      const urlParams = new URLSearchParams(queryString);
+      const gpsString = urlParams.get('gps');
+      let locations = [];
+      if (gpsString) {
+      // Split the GPS string by ";" to get each set of coordinates
+        locations = gpsString.split(";").map(coord => {
+        // Split each set of coordinates by ","
+        const [lat, lng, altitude] = coord.split(",");
+        return { lat: parseFloat(lat), lng: parseFloat(lng), altitude: parseFloat(altitude) };
+      });
+
+
+      }
+        const map = new google.maps.Map(document.getElementById("map"), {
+          zoom: 15, 
+          center: locations[0]
+        });
+        console.log(locations);
+
+        // Loop through the array and add a marker for each location
+        // Loop through each point and create a circle
+        locations.forEach((point,index) => {
+          new google.maps.Circle({
+            strokeColor: "#FF0000",
+            strokeOpacity: 0.8,
+            strokeWeight: 2,
+            fillColor: "#FF0000",
+            fillOpacity: 0.02,
+            map: map,
+            center: { lat: point.lat, lng: point.lng },
+            radius: point.altitude,  // Radius specific to each point
+          });
+
+          if (index+1 < locations.length ) {
+            new google.maps.Marker({
+              position: { lat: point.lat, lng: point.lng },
+              map: map,
+              title: `Point ${index + 1}`,  // Customize marker title
+            });
+          } else {
+
+            const svgMarker = {
+              path: "M-1.547 12l6.563-6.609-1.406-1.406-5.156 5.203-2.063-2.109-1.406 1.406zM0 0q2.906 0 4.945 2.039t2.039 4.945q0 1.453-0.727 3.328t-1.758 3.516-2.039 3.070-1.711 2.273l-0.75 0.797q-0.281-0.328-0.75-0.867t-1.688-2.156-2.133-3.141-1.664-3.445-0.75-3.375q0-2.906 2.039-4.945t4.945-2.039z",
+              fillColor: "red",
+              fillOpacity: 0.6,
+              strokeWeight: 0,
+              rotation: 0,
+              scale: 2,
+              anchor: new google.maps.Point(0, 20),
+            };
+            new google.maps.Marker({
+              position: { lat: point.lat, lng: point.lng },
+              icon: svgMarker,
+              map: map,
+              scale: 5,
+              title: `Point ${index + 1}`,  // Customize marker title
+            });
+          }
+
+        });
+      }
+    </script>
+    <style>
+      /* Set the size of the map */
+      #map {
+        height: 500px;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body onload="initMap()">
+    <h3>Map with Multiple Points</h3>
+    <div id="map"></div>
+  </body>
+</html>
