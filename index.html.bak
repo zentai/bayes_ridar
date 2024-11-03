@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treasure Hunt Map</title>
+    <link rel="stylesheet" href="static/style.css">
+    <script type="module" src="static/empiricaldist.js"></script>
+    <script type="module" src="static/script.js"></script>
+    
+</head>
+<body>
+    <div id="controls">
+        <label class="upload-label" for="upload-map">Upload Map</label>
+        <input type="file" id="upload-map" accept="image/*">
+        <br>
+        <select id="grid-size">
+            <option value="10">10 x 10</option>
+            <option value="20">20 x 20</option>
+            <option value="30">30 x 30</option>
+        </select>
+        <button id="set-grid">Set Grid</button>
+        <br>
+        <select id="mark-option">
+            <option value="NO_GO">No-go (0.001)</option>
+            <option value="ROUGH_SEARCH">Rough Search (0.3)</option>
+            <option value="DETAILED_SEARCH">Detailed Search (0.1)</option>
+            <option value="PROFESSIONAL_TOOLS">Professional Tools Search (0.05)</option>
+            <option value="SIMILAR_TERRAIN">Similar Terrain (1.8)</option>
+        </select>
+        <button id="recalculate">Recalculate</button>
+    </div>
+    <div id="map-container">
+        <img id="map" src="" alt="Map Image" style="display: none;">
+    </div>
+</body>
+</html>
