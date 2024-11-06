@@ -4,540 +4,151 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Map with Multiple Points</title>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCssd8F37O1YosY8k0b4lUBmOTLsqGICUo&libraries=places"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places"></script>
     <script src="/static/localstorage.js"></script>
 
     <script>
      var map;
-     var radius;
-     var placeTypes;
+     var radius = 300;
      var radiusCircle;
      var gpsMarker;
      var placeMarkers = [];
      var placesService;
 
-
-      // set interval running
-      setInterval(()=> {
-        if (map)
-          getLocation();
-      }, 15000)
-
-
+     // set interval to update user location every 15 seconds
+     setInterval(() => {
+        if (map) getLocation();
+      }, 15000);
 
      async function initMap() {
-      const { Map } = await google.maps.importLibrary("maps");
-      const { AdvancedMarkerElement, PinElement } = await google.maps.importLibrary(
-        "marker",
-      );
-      var queryString = window.location.search;
-      const urlParams = new URLSearchParams(queryString);
-      const gpsString = urlParams.get('gps');
-      var urLat = "";
-      var urLng = "";
-      let locations = [];
+        var queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        const gpsString = urlParams.get('gps');
+        let locations = gpsString ? gpsString.split(";").map(coord => {
+            const [lat, lng, altitude] = coord.split(",");
+            return { lat: parseFloat(lat), lng: parseFloat(lng), altitude: parseFloat(altitude) };
+        }) : [];
 
-
-      var dropdown1 = document.getElementById("radius");
-      dropdown1.addEventListener("change", function() {
-          const selectedValue = dropdown1.value;
-          radius = parseInt(selectedValue);
-          getLocation();
-      });
-
-      var dropdown2 = document.getElementById("places");
-      dropdown2.addEventListener("change", function() {
-          const selectedValue2 = dropdown2.value;
-          performPlaceSearch(selectedValue2);
-      });
-
-
-
-      if (gpsString) {
-      // Split the GPS string by ";" to get each set of coordinates
-        locations = gpsString.split(";").map(coord => {
-        // Split each set of coordinates by ","
-        const [lat, lng, altitude] = coord.split(",");
-        return { lat: parseFloat(lat), lng: parseFloat(lng), altitude: parseFloat(altitude) };
-      });
-
-
-      }
         map = new google.maps.Map(document.getElementById("map"), {
           zoom: 18, 
-          center: locations[0] 
+          center: locations.length > 0 ? locations[0] : {lat: 1.3521, lng: 103.8198}, // Fallback to Singapore
         });
         placesService = new google.maps.places.PlacesService(map);
-        console.log(locations);
-        // Loop through the array and add a marker for each location
-        // Loop through each point and create a circle
-        locations.forEach((point,index) => {
+        
+        locations.forEach((point, index) => {
           new google.maps.Circle({
-            strokeColor: "#FF0000",
+            strokeColor: index + 1 < locations.length ? "#FF0000" : "green",
             strokeOpacity: 0.8,
             strokeWeight: 2,
-            fillColor: "#FF0000",
+            fillColor: index + 1 < locations.length ? "#FF0000" : "green",
             fillOpacity: 0.0,
             map: map,
             center: { lat: point.lat, lng: point.lng },
-            radius: point.altitude,  // Radius specific to each point
+            radius: point.altitude,
           });
 
-          if (index+1 < locations.length ) {
-            new google.maps.Marker({
-              position: { lat: point.lat, lng: point.lng },
-              map: map,
-              title: `Point ${index + 1}`,  // Customize marker title
-            });
-          } else {
+          const svgMarker = index + 1 < locations.length ? undefined : {
+            path: "M-1.547 12l6.563-6.609-1.406-1.406-5.156 5.203-2.063-2.109-1.406 1.406zM0 0q2.906 0 4.945 2.039t2.039 4.945q0 1.453-0.727 3.328t-1.758 3.516-2.039 3.070-1.711 2.273l-0.75 0.797q-0.281-0.328-0.75-0.867t-1.688-2.156-2.133-3.141-1.664-3.445-0.75-3.375q0-2.906 2.039-4.945t4.945-2.039z",
+            fillColor: "green",
+            fillOpacity: 0.6,
+            strokeWeight: 0,
+            rotation: 0,
+            scale: 2,
+            anchor: new google.maps.Point(0, 20),
+          };
 
-            const svgMarker = {
-              path: "M-1.547 12l6.563-6.609-1.406-1.406-5.156 5.203-2.063-2.109-1.406 1.406zM0 0q2.906 0 4.945 2.039t2.039 4.945q0 1.453-0.727 3.328t-1.758 3.516-2.039 3.070-1.711 2.273l-0.75 0.797q-0.281-0.328-0.75-0.867t-1.688-2.156-2.133-3.141-1.664-3.445-0.75-3.375q0-2.906 2.039-4.945t4.945-2.039z",
-              fillColor: "green",
-              fillOpacity: 0.6,
-              strokeWeight: 0,
-              rotation: 0,
-              scale: 2,
-              anchor: new google.maps.Point(0, 20),
-            };
-            new google.maps.Marker({
-              position: { lat: point.lat, lng: point.lng },
+          new google.maps.Marker({
+            position: { lat: point.lat, lng: point.lng },
+            map: map,
+            title: `Point ${index + 1}`,
+            icon: svgMarker,
+          });
+        });
+      }
+
+      function getLocation() {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(showPosition, showError, {
+            enableHighAccuracy: true,
+            maximumAge: 0
+          });
+        } else {
+          document.getElementById("location-output2").innerText = "Geolocation is not supported by this browser.";
+        }
+      }
+
+      function showPosition(position) {
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+
+        if (map) {
+          const svgMarker = {
+            path: "M-1.547 12l6.563-6.609-1.406-1.406-5.156 5.203-2.063-2.109-1.406 1.406zM0 0q2.906 0 4.945 2.039t2.039 4.945q0 1.453-0.727 3.328t-1.758 3.516-2.039 3.070-1.711 2.273l-0.75 0.797q-0.281-0.328-0.75-0.867t-1.688-2.156-2.133-3.141-1.664-3.445-0.75-3.375q0-2.906 2.039-4.945t4.945-2.039z",
+            fillColor: "orange",
+            fillOpacity: 0.6,
+            strokeWeight: 0,
+            rotation: 0,
+            scale: 2,
+            anchor: new google.maps.Point(0, 20),
+          };
+
+          if (!radiusCircle) {
+            gpsMarker = new google.maps.Marker({
+              position: { lat: latitude, lng: longitude },
               icon: svgMarker,
               map: map,
-              scale: 5,
-              title: `Point ${index + 1}`,  // Customize marker title
+              title: `Current Position`,
             });
-            new google.maps.Circle({
-              strokeColor: "green",
+            radiusCircle = new google.maps.Circle({
+              strokeColor: "orange",
               strokeOpacity: 0.8,
               strokeWeight: 2,
-              fillColor: "green",
+              fillColor: "orange",
               fillOpacity: 0.0,
               map: map,
-              center: { lat: point.lat, lng: point.lng },
-              radius: 300,  // Radius specific to each point
+              center: { lat: latitude, lng: longitude },
+              radius: radius,
             });
+          } else {
+            gpsMarker.setPosition({ lat: latitude, lng: longitude });
+            radiusCircle.setRadius(radius);
           }
-        });
-      } 
-
-        function getLocation() {
-            // Check if the Geolocation API is available
-            if (navigator.geolocation) {
-                // Request the current position
-                navigator.geolocation.getCurrentPosition(showPosition, showError, {
-                  enableHighAccuracy: true,
-                  maximumAge: 0   // Do not use cached position
-                });
-            } else {
-                document.getElementById("location-output2").innerText = "Geolocation is not supported by this browser.";
-            }
+          
+          map.setCenter({ lat: latitude, lng: longitude });
+          document.getElementById("location-output2").value = `${latitude}, ${longitude}`;
         }
-        
-        function showPosition(position) {
-            // Get latitude and longitude
-            const latitude = position.coords.latitude;
-            const longitude = position.coords.longitude;
-            urLat = position.coords.latitude;
-            urLng = position.coords.longitude;
+      }
 
-            if (map) {
+      function showError(error) {
+        console.log(error);
+      }
 
-                const svgMarker = {
-                  path: "M-1.547 12l6.563-6.609-1.406-1.406-5.156 5.203-2.063-2.109-1.406 1.406zM0 0q2.906 0 4.945 2.039t2.039 4.945q0 1.453-0.727 3.328t-1.758 3.516-2.039 3.070-1.711 2.273l-0.75 0.797q-0.281-0.328-0.75-0.867t-1.688-2.156-2.133-3.141-1.664-3.445-0.75-3.375q0-2.906 2.039-4.945t4.945-2.039z",
-                  fillColor: "orange",
-                  fillOpacity: 0.6,
-                  strokeWeight: 0,
-                  rotation: 0,
-                  scale: 2,
-                  anchor: new google.maps.Point(0, 20),
-                };
-
-
-                if (!radiusCircle) {
-                     gpsMarker = new google.maps.Marker({
-                                  position: { lat: urLat, lng: urLng },
-                                  icon: svgMarker,
-                                  map: map,
-                                  scale: 5,
-                                  title: `Point`,  // Customize marker title
-                                });
-                    radiusCircle = new google.maps.Circle({
-                      strokeColor: "orange",
-                      strokeOpacity: 0.8,
-                      strokeWeight: 2,
-                      fillColor: "orange",
-                      fillOpacity: 0.0,
-                      map: map,
-                      center: { lat: urLat, lng: urLng },
-                      radius: radius?? 300,  // Radius specific to each point
-                    });
-                } else {
-                  gpsMarker.setPosition({ lat: urLat, lng: urLng });
-                  radiusCircle.setRadius(radius)
-                }
-
-                const newLocation = {
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude
-                };
-
-                map.setCenter(newLocation);
-                document.getElementById("location-output2").value = `${latitude}, ${longitude}`;
-                let getCustomPoints = listAllData();
-                getCustomPoints.forEach(item=> { 
-                    plotPoint(item, svgMarker);
-                })
-
-            }
-
-        }
-        function showError(error) {
-            console.log(error)
-        }
-
-        function plotPoint(item, svgMarker) {
-
-            if (item.lat && item.lng) {
-                svgMarker.fillColor = "blue";
-                var mk = new google.maps.Marker({
-                position: { lat: item.lat , lng: item.lng },
-                icon: svgMarker,
-                map: map,
-                scale: 5,
-                title: `Point`,  // Customize marker title
-              });
-              new google.maps.Circle({
-                strokeColor: "blue",
-                strokeOpacity: 0.8,
-                strokeWeight: 2,
-                fillColor: "blue",
-                fillOpacity: 0.0,
-                map: map,
-                center: { lat: urLat, lng: urLng },
-                radius: parseInt(item.name) ?? 300,  // Radius specific to each point
-              });
-
-              const infoWindow = new google.maps.InfoWindow({
-                  content: `<strong>${item.description}</strong><br>${item.name}`
-              });
-              mk.addListener("click", () => {
-                  infoWindow.open(map, mk);
-              });
-            }
-
-        }
-
-        function performPlaceSearch(placeName) {
-            // Define the request for PlacesService
-            const request = {
-                location: map.getCenter(),  // Use current center of the map
-                radius: 1000,               // Search radius in meters
-                type: [placeName],       // Type of place to search for (e.g., "restaurant", "store", etc.)
-            };
-
-            // Use the PlacesService to perform a nearby search
-            placesService.nearbySearch(request, (results, status) => {
-                if (status === google.maps.places.PlacesServiceStatus.OK) {
-                    clearMarkers();  // Clear existing markers
-                    results.forEach(place => {
-                        if (place.geometry && place.geometry.location) {
-                            addMarker(place);
-                        }
-                    });
-                } else {
-                    console.error("Places search failed with status:", status);
-                }
-            });
-        }
-
-        function clearMarkers() {
-          if (placeMarkers.length > 0 ) {
-              placeMarkers.forEach(marker => marker.setMap(null));  // Remove each marker from the map
-              placeMarkers = [];  // Clear the markers array
-          }
-        }
-                // Function to add a marker for each place found
-        function addMarker(place) {
-          const marker = new google.maps.Marker({
-                map: map,
-                position: place.geometry.location,
-                title: place.name,
-                icon: {
-                    path: google.maps.SymbolPath.CIRCLE,
-                    scale: 7,
-                    fillColor: "black",
-                    fillOpacity: 0.6,
-                    strokeWeight: 0
-                },
-            });
-            placeMarkers.push(marker);  // Store marker for potential clearing later
-
-            // Optional: Add an info window for each marker
-            const infoWindow = new google.maps.InfoWindow({
-                content: `<strong>${place.name}</strong><br>${place.vicinity}`
-            });
-            marker.addListener("click", () => {
-                infoWindow.open(map, marker);
-            });
-        }
     </script>
     <style>
-      /* Set the size of the map */
       #map {
         height: 500px;
         width: 100%;
       }
 
       .container1 {
-        display: flex; /* or inline-flex */
+        display: flex;
       }
       .container1 div{
-        width: 300px; /* or inline-flex */
+        width: 300px;
       }
 
-        /* Modal background styling */
-        #modalBackground {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-        }
-
-        /* Modal box styling */
-        #modalBox {
-            position: fixed;
-            top: 25%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: #fff;
-            padding: 20px;
-            width: 300px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Modal close button styling */
-        #closeButton {
-            cursor: pointer;
-            float: right;
-            font-size: 90px;
-            font-weight: bold;
-        }
-
-        /* Button to trigger modal */
-        #openModalButton {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        #modalBox select {
-          width: 100%;
-          padding: 16px 20px;
-          border: none;
-          border-radius: 4px;
-          background-color: #f1f1f1;
-        }
-
-        .bigButton {
-          padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-        }
+      .bigButton {
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+      }
     </style>
   </head>
   <body onload="initMap()">
-    <div >
-      <div class="container1">
-          <div>
-            <button class="bigButton" onclick="getLocation()">Load</button>
-          </div>
-          <div>
-            <select id="radius" class="bigButton">
-              <option value="5">5</option>
-              <option value="10">10</option>
-              <option value="30">30</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-              <option value="300">300</option>
-            </select>
-          </div>
-          <div>
-            <select id="places" class="bigButton">
-              <option value="establishment">establishment</option>
-              <option value="restaurant">restaurant</option>
-              <option value="cafe">cafe</option>
-              <option value="bar">bar</option>
-              <option value="store">store</option>
-              <option value="bank">bank</option>
-              <option value="park">park</option>
-              <option value="bus_station">bus_station</option>
-              <option value="lodging">lodging</option>
-              <option value="school">school</option>
-              <option value="university">university</option>
-              <option value="police">police</option>
-            </select>
-          </div>
-          <div><button id="openModalButton">PLOT</button></div>
-      </div>
-
-    <div>
-
-
+    <div class="container1">
+      <div><button class="bigButton" onclick="getLocation()">Load</button></div>
     </div>
-    <!-- <div > <input id="location-output" type="text" value="">  </div>
-    <h3>Map with Multiple Points</h3> -->
     <div id="map"></div>
-
-    <table>
-      <tr>
-        <td>
-          <div><button id="toCSV" class="bigButton">CSV</button></div>
-        </td>
-        <td>
-          <div><button type="button" class="bigButton" onclick="CopyToClipboard('location-output2')">Copy text</button></div>
-        </td>
-        <td>
-          <div> <a href="/ls"><button type="button" class="bigButton" onclick="CopyToClipboard('location-output2')">LocalStorage Edit</button></a></div>
-        </td>
-      </tr>
-    </table>
-    
-    <div id="location-output2">  </div>
-    <div id="modalBackground">
-      <!-- Modal box -->
-      <div id="modalBox">
-          <span id="closeButton">&times;</span>
-          <h2>Select an Option</h2>
-          <p>Please select an option from the dropdown:</p>
-          
-          <!-- Dropdown menu -->
-          <select id="dropdownMenu" > <option value="40">這枚硬幣將隱藏在距離工廠 82 步之遙的地方。</option>
-            <option value="100">距離硬幣不到 100m 的地方會有黑暗的東西。</option>
-            <option value="120">如果您看到高於 1.69m 的物體，則您可能位於硬幣的 120m 範圍內。</option>
-            <option value="200">看到高於人類平均身高的數字了嗎？您可能位於硬幣所在位置 200m 範圍內。</option>
-            <option value="290">距離幣點290M範圍內可能會發現有香味的東西。</option>
-            <option value="290">你可以在距離硬幣隱藏點290m以內找到密封的東西。</option>
-            <option value="300">如果你看到有東西停下來，你可能距離硬幣的藏身點不到300M。</option>
-            <option value="300">該硬幣將在 300M 內存在超過 5 年的東西。</option>
-            <option value="300">距離硬幣藏匿點不到300m處有一個象徵性的東西。</option>
-            <option value="311">A套裝：幣點311M以內，可以減少連接的東西。</option>
-            <option value="311">硬幣所在位置距離固定壽命的物體 311m 以內。</option>
-            <option value="320">屬於你但尚未屬於你的東西 - 查看硬幣所在位置 320M 範圍內的情況。</option>
-            <option value="333">代碼在距離硬幣位置 333m 以內的地方很重要。</option>
-            <option value="399">A套裝：睡眠觸發點位於金幣所在位置399M以內。</option>
-            <option value="400">距離硬幣400m以內可以找到字母表中的東西。</option>
-            <option value="411">距離硬幣藏匿點 411m 以內的某個地方可能會讓您想起歐洲的某個國家。</option>
-            <option value="418">硬幣將在您可以推或拉的東西的 418M 範圍內。</option>
-            <option value="440">A 組：在距離硬幣位置 440m 範圍內的名字中找出第二個東西。</option>
-            <option value="450">A套：如果你發現掉落的東西，你可能就在金幣藏身點450M以內。</option>
-            <option value="450">A路線（2/5）：左轉步行約450M。</option>
-            <option value="450">可以在硬幣隱藏點 450M 範圍內的標識符中找到完美的東西。</option>
-            <option value="480">在硬幣所在位置480M的範圍內，有一個東西可以有不同的內部。</option>
-            <option value="500">A Set：在硬幣的500M範圍內，有一個只能容納一個的東西的親戚。</option>
-            <option value="500">幣點500M以內，缺乏持久性。</option>
-            <option value="599">距離硬幣藏匿點 599m 範圍內至少可以找到 3 個機會。</option>
-            <option value="600">距離硬幣位置不到600M的地方似乎有什麼有趣的東西。</option>
-            <option value="600">該幣距離某個地方600M以內可能有補貼。</option>
-            <option value="600">距離硬幣地點600m以內可以找到海裡的果實。</option>
-            <option value="602">飢餓的人類可能會在硬幣藏身點 602m 範圍內變得快樂。</option>
-            <option value="608">硬幣將位於冷物體 608m 範圍內。</option>
-            <option value="700">投幣處700M以內有廁所。</option>
-            <option value="700">如果您想記住單詞，您可能距離硬幣的藏匿點不到 700m。</option>
-            <option value="705">如果您看到用於移動的物體的 2D 版本，則您可能位於硬幣所在位置 705m 的範圍內。</option>
-            <option value="1200">您可能會在距離硬幣 1.2 公里的範圍內找到富有創造力的人。</option>
-        </select>
-
-          <button onclick="submitSelection()">Submit</button>
-      </div>
-  </div>
-
-
-  <script>
-    // Elements for modal and button
-    const modalBackground = document.getElementById("modalBackground");
-    const openModalButton = document.getElementById("openModalButton");
-    const closeButton = document.getElementById("closeButton");
-    const toCSV = document.getElementById("toCSV");
-    const displayPlace = document.getElementById("location-output2");
-
-    toCSV.onclick = function() {
-      var tdata = listAllData();
-      displayPlace.innerHTML = JSON.stringify(tdata);
-    }
-
-    // Open modal when button is clicked
-    openModalButton.onclick = function() {
-        modalBackground.style.display = "block";
-    }
-
-    // Close modal when close button is clicked
-    closeButton.onclick = function() {
-        modalBackground.style.display = "none";
-    }
-
-    // Close modal when clicking outside the modal box
-    window.onclick = function(event) {
-        if (event.target == modalBackground) {
-            modalBackground.style.display = "none";
-        }
-    }
-
-    // Function to handle dropdown selection
-    function submitSelection() {
-        const dropdown = document.getElementById("dropdownMenu");
-        const selectedOption = dropdown.options[dropdown.selectedIndex];
-    
-        if (selectedOption) {
-            alert("You selected: " + selectedOption.value);
-            saveLocation(selectedOption.value, selectedOption.text)
-            modalBackground.style.display = "none"; // Close the modal after selection
-        } else {
-            alert("Please select an option.");
-        }
-    }
-
-    function saveLocation(name, description) {
-            // Check if the Geolocation API is available
-            if (navigator.geolocation) {
-                // Request the current position
-                navigator.geolocation.getCurrentPosition(
-                function (position) {
-                  saveLocationToLS(position, name, description)
-                }
-                , showError, {
-                  enableHighAccuracy: true,
-                  maximumAge: 0   // Do not use cached position
-                });
-            } else {
-                document.getElementById("location-output2").innerText = "Geolocation is not supported by this browser.";
-            }
-        }
-    function saveLocationToLS (position, name, description) {
-        // Get latitude and longitude
-        const latitude = position.coords.latitude;
-        const longitude = position.coords.longitude;
-        addDataToLocalStorage({ name: name, description: description, lat: latitude, lng: longitude });
-    }
-
-    function CopyToClipboard(id){
-        var r = document.createRange();
-        r.selectNode(document.getElementById(id));
-        window.getSelection().removeAllRanges();
-        window.getSelection().addRange(r);
-        try {
-            document.execCommand('copy');
-            window.getSelection().removeAllRanges();
-        } catch (err) {
-            console.log('Unable to copy!');
-        }
-    }
-</script>
+    <div id="location-output2"></div>
   </body>
-
-
 </html>
