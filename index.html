@@ -5,7 +5,7 @@
 
     <title>Map with Multiple Points</title>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCssd8F37O1YosY8k0b4lUBmOTLsqGICUo&libraries=places"></script>
-    <script src="static/localstorage.js"></script>
+    <script src="./static/localstorage.js"></script>
 
     <script>
      var map;
@@ -123,6 +123,94 @@
         console.log(error);
       }
 
+      function plotSelectedPoint() {
+        const dropdown = document.getElementById("dropdownMenu");
+        const selectedOption = dropdown.options[dropdown.selectedIndex];
+
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(function(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            const radius = parseInt(selectedOption.value);
+            const description = selectedOption.text;
+
+            const svgMarker = {
+              path: "M-1.547 12l6.563-6.609-1.406-1.406-5.156 5.203-2.063-2.109-1.406 1.406zM0 0q2.906 0 4.945 2.039t2.039 4.945q0 1.453-0.727 3.328t-1.758 3.516-2.039 3.070-1.711 2.273l-0.75 0.797q-0.281-0.328-0.75-0.867t-1.688-2.156-2.133-3.141-1.664-3.445-0.75-3.375q0-2.906 2.039-4.945t4.945-2.039z",
+              fillColor: "blue",
+              fillOpacity: 0.6,
+              strokeWeight: 0,
+              rotation: 0,
+              scale: 2,
+              anchor: new google.maps.Point(0, 20),
+            };
+
+            new google.maps.Marker({
+              position: { lat: latitude, lng: longitude },
+              icon: svgMarker,
+              map: map,
+              title: description,
+            });
+
+            new google.maps.Circle({
+              strokeColor: "blue",
+              strokeOpacity: 0.8,
+              strokeWeight: 2,
+              fillColor: "blue",
+              fillOpacity: 0.1,
+              map: map,
+              center: { lat: latitude, lng: longitude },
+              radius: radius,
+            });
+
+            saveToLocalStorage({ lat: latitude, lng: longitude, radius: radius, description: description });
+          }, showError, {
+            enableHighAccuracy: true,
+            maximumAge: 0
+          });
+        } else {
+          console.error("Geolocation is not supported by this browser.");
+        }
+      }
+
+      function saveToLocalStorage(data) {
+        let storedData = JSON.parse(localStorage.getItem("locations")) || [];
+        storedData.push(data);
+        localStorage.setItem("locations", JSON.stringify(storedData));
+      }
+
+      function loadSavedPoints() {
+        let storedData = JSON.parse(localStorage.getItem("locations")) || [];
+        storedData.forEach(item => {
+          const svgMarker = {
+            path: "M-1.547 12l6.563-6.609-1.406-1.406-5.156 5.203-2.063-2.109-1.406 1.406zM0 0q2.906 0 4.945 2.039t2.039 4.945q0 1.453-0.727 3.328t-1.758 3.516-2.039 3.070-1.711 2.273l-0.75 0.797q-0.281-0.328-0.75-0.867t-1.688-2.156-2.133-3.141-1.664-3.445-0.75-3.375q0-2.906 2.039-4.945t4.945-2.039z",
+            fillColor: "blue",
+            fillOpacity: 0.6,
+            strokeWeight: 0,
+            rotation: 0,
+            scale: 2,
+            anchor: new google.maps.Point(0, 20),
+          };
+
+          new google.maps.Marker({
+            position: { lat: item.lat, lng: item.lng },
+            icon: svgMarker,
+            map: map,
+            title: item.description,
+          });
+
+          new google.maps.Circle({
+            strokeColor: "blue",
+            strokeOpacity: 0.8,
+            strokeWeight: 2,
+            fillColor: "blue",
+            fillOpacity: 0.1,
+            map: map,
+            center: { lat: item.lat, lng: item.lng },
+            radius: item.radius,
+          });
+        });
+      }
+
     </script>
     <style>
       #map {
@@ -144,9 +232,42 @@
       }
     </style>
   </head>
-  <body onload="initMap()">
+  <body onload="initMap(); loadSavedPoints();">
     <div class="container1">
       <div><button class="bigButton" onclick="getLocation()">Load</button></div>
+      <div>
+        <select id="dropdownMenu" class="bigButton">
+          <option value="300">如果你看到有東西停下來，你可能距離硬幣的藏身點不到300M。</option>
+          <option value="300">該硬幣將在 300M 內存在超過 5 年的東西。</option>
+          <option value="300">距離硬幣藏匿點不到300m處有一個象徵性的東西。</option>
+          <option value="311">A套裝：幣點311M以內，可以減少連接的東西。</option>
+          <option value="311">硬幣所在位置距離固定壽命的物體 311m 以內。</option>
+          <option value="320">屬於你但尚未屬於你的東西 - 查看硬幣所在位置 320M 範圍內的情況。</option>
+          <option value="333">代碼在距離硬幣位置 333m 以內的地方很重要。</option>
+          <option value="399">A套裝：睡眠觸發點位於金幣所在位置399M以內。</option>
+          <option value="400">距離硬幣400m以內可以找到字母表中的東西。</option>
+          <option value="411">距離硬幣藏匿點 411m 以內的某個地方可能會讓您想起歐洲的某個國家。</option>
+          <option value="418">硬幣將在您可以推或拉的東西的 418M 範圍內。</option>
+          <option value="440">A 組：在距離硬幣位置 440m 範圍內的名字中找出第二個東西。</option>
+          <option value="450">A套：如果你發現掉落的東西，你可能就在金幣藏身點450M以內。</option>
+          <option value="450">A路線（2/5）：左轉步行約450M。</option>
+          <option value="450">可以在硬幣隱藏點 450M 範圍內的標識符中找到完美的東西。</option>
+          <option value="480">在硬幣所在位置480M的範圍內，有一個東西可以有不同的內部。</option>
+          <option value="500">A Set：在硬幣的500M範圍內，有一個只能容納一個的東西的親戚。</option>
+          <option value="500">幣點500M以內，缺乏持久性。</option>
+          <option value="599">距離硬幣藏匿點 599m 範圍內至少可以找到 3 個機會。</option>
+          <option value="600">距離硬幣位置不到600M的地方似乎有什麼有趣的東西。</option>
+          <option value="600">該幣距離某個地方600M以內可能有補貼。</option>
+          <option value="600">距離硬幣地點600m以內可以找到海裡的果實。</option>
+          <option value="602">飢餓的人類可能會在硬幣藏身點 602m 範圍內變得快樂。</option>
+          <option value="608">硬幣將位於冷物體 608m 範圍內。</option>
+          <option value="700">投幣處700M以內有廁所。</option>
+          <option value="700">如果您想記住單詞，您可能距離硬幣的藏匿點不到 700m。</option>
+          <option value="705">如果您看到用於移動的物體的 2D 版本，則您可能位於硬幣所在位置 705m 的範圍內。</option>
+          <option value="1200">您可能會在距離硬幣 1.2 公里的範圍內找到富有創造力的人。</option>
+        </select>
+      </div>
+      <div><button class="bigButton" onclick="plotSelectedPoint()">Plot</button></div>
     </div>
     <div id="map"></div>
     <div id="location-output2"></div>
