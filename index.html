@@ -1,13 +1,13 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Map with Multiple Points</title>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCssd8F37O1YosY8k0b4lUBmOTLsqGICUo&libraries=places"></script>
+    <script src="/static/localstorage.js"></script>
+
     <script>
-
-
      var map;
      var radius;
      var placeTypes;
@@ -15,6 +15,15 @@
      var gpsMarker;
      var placeMarkers = [];
      var placesService;
+
+
+      // set interval running
+      setInterval(()=> {
+        if (map)
+          getLocation();
+      }, 30000)
+
+
 
      async function initMap() {
       const { Map } = await google.maps.importLibrary("maps");
@@ -32,7 +41,6 @@
       var dropdown1 = document.getElementById("radius");
       dropdown1.addEventListener("change", function() {
           const selectedValue = dropdown1.value;
-          console.log("Selected option:", selectedValue);
           radius = parseInt(selectedValue);
           getLocation();
       });
@@ -40,7 +48,6 @@
       var dropdown2 = document.getElementById("places");
       dropdown2.addEventListener("change", function() {
           const selectedValue2 = dropdown2.value;
-          console.log("Selected option:", selectedValue2);
           performPlaceSearch(selectedValue2);
       });
 
@@ -57,7 +64,7 @@
 
       }
         map = new google.maps.Map(document.getElementById("map"), {
-          zoom: 15, 
+          zoom: 18, 
           center: locations[0] 
         });
         placesService = new google.maps.places.PlacesService(map);
@@ -111,8 +118,6 @@
               radius: 300,  // Radius specific to each point
             });
           }
-
-
         });
       } 
 
@@ -178,14 +183,49 @@
                 };
 
                 map.setCenter(newLocation);
-                // document.getElementById("location-output").value = `Latitude: ${latitude}, Longitude: ${longitude}`;
-
                 document.getElementById("location-output").value = `${latitude}, ${longitude}`;
+                let getCustomPoints = listAllData();
+                getCustomPoints.forEach(item=> { 
+                    plotPoint(item, svgMarker);
+                })
+
             }
 
         }
         function showError(error) {
             console.log(error)
+        }
+
+        function plotPoint(item, svgMarker) {
+
+            if (item.lat && item.lng) {
+                svgMarker.fillColor = "blue";
+                var mk = new google.maps.Marker({
+                position: { lat: item.lat , lng: item.lng },
+                icon: svgMarker,
+                map: map,
+                scale: 5,
+                title: `Point`,  // Customize marker title
+              });
+              new google.maps.Circle({
+                strokeColor: "blue",
+                strokeOpacity: 0.8,
+                strokeWeight: 2,
+                fillColor: "blue",
+                fillOpacity: 0.0,
+                map: map,
+                center: { lat: urLat, lng: urLng },
+                radius: parseInt(item.name) ?? 300,  // Radius specific to each point
+              });
+
+              const infoWindow = new google.maps.InfoWindow({
+                  content: `<strong>${item.description}</strong><br>${item.name}`
+              });
+              mk.addListener("click", () => {
+                  infoWindow.open(map, mk);
+              });
+            }
+
         }
 
         function performPlaceSearch(placeName) {
@@ -216,7 +256,6 @@
               placeMarkers.forEach(marker => marker.setMap(null));  // Remove each marker from the map
               placeMarkers = [];  // Clear the markers array
           }
-
         }
                 // Function to add a marker for each place found
         function addMarker(place) {
@@ -246,7 +285,7 @@
     <style>
       /* Set the size of the map */
       #map {
-        height: 900px;
+        height: 500px;
         width: 100%;
       }
 
@@ -256,6 +295,53 @@
       .container1 div{
         width: 300px; /* or inline-flex */
       }
+
+        /* Modal background styling */
+        #modalBackground {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        /* Modal box styling */
+        #modalBox {
+            position: fixed;
+            top: 25%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            padding: 20px;
+            width: 300px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Modal close button styling */
+        #closeButton {
+            cursor: pointer;
+            float: right;
+            font-size: 90px;
+            font-weight: bold;
+        }
+
+        /* Button to trigger modal */
+        #openModalButton {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #modalBox select {
+          width: 100%;
+          padding: 16px 20px;
+          border: none;
+          border-radius: 4px;
+          background-color: #f1f1f1;
+        }
     </style>
   </head>
   <body onload="initMap()">
@@ -290,8 +376,7 @@
               <option value="police">police</option>
             </select>
           </div>
-
-
+          <div><button id="openModalButton">PLOT</button></div>
       </div>
 
     <div>
@@ -302,5 +387,152 @@
 
     <h3>Map with Multiple Points</h3>
     <div id="map"></div>
+
+    <table>
+      <tr>
+        <td>
+          <div><button id="toCSV">CSV</button></div>
+        </td>
+        <td>
+          <div><button type="button" onclick="CopyToClipboard('location-output2')">Copy text</button></div>
+        </td>
+        <td>
+          <div> <a href="/ls"><button type="button" onclick="CopyToClipboard('location-output2')">LocalStorage Edit</button></a></div>
+        </td>
+      </tr>
+    </table>
+    
+    <div id="location-output2">  </div>
+    <div id="modalBackground">
+      <!-- Modal box -->
+      <div id="modalBox">
+          <span id="closeButton">&times;</span>
+          <h2>Select an Option</h2>
+          <p>Please select an option from the dropdown:</p>
+          
+          <!-- Dropdown menu -->
+          <select id="dropdownMenu"> <option value="40">這枚硬幣將隱藏在距離工廠 82 步之遙的地方。</option>
+            <option value="100">距離硬幣不到 100m 的地方會有黑暗的東西。</option>
+            <option value="120">如果您看到高於 1.69m 的物體，則您可能位於硬幣的 120m 範圍內。</option>
+            <option value="200">看到高於人類平均身高的數字了嗎？您可能位於硬幣所在位置 200m 範圍內。</option>
+            <option value="290">距離幣點290M範圍內可能會發現有香味的東西。</option>
+            <option value="290">你可以在距離硬幣隱藏點290m以內找到密封的東西。</option>
+            <option value="300">如果你看到有東西停下來，你可能距離硬幣的藏身點不到300M。</option>
+            <option value="300">該硬幣將在 300M 內存在超過 5 年的東西。</option>
+            <option value="300">距離硬幣藏匿點不到300m處有一個象徵性的東西。</option>
+            <option value="311">A套裝：幣點311M以內，可以減少連接的東西。</option>
+            <option value="311">硬幣所在位置距離固定壽命的物體 311m 以內。</option>
+            <option value="320">屬於你但尚未屬於你的東西 - 查看硬幣所在位置 320M 範圍內的情況。</option>
+            <option value="333">代碼在距離硬幣位置 333m 以內的地方很重要。</option>
+            <option value="399">A套裝：睡眠觸發點位於金幣所在位置399M以內。</option>
+            <option value="400">距離硬幣400m以內可以找到字母表中的東西。</option>
+            <option value="411">距離硬幣藏匿點 411m 以內的某個地方可能會讓您想起歐洲的某個國家。</option>
+            <option value="418">硬幣將在您可以推或拉的東西的 418M 範圍內。</option>
+            <option value="440">A 組：在距離硬幣位置 440m 範圍內的名字中找出第二個東西。</option>
+            <option value="450">A套：如果你發現掉落的東西，你可能就在金幣藏身點450M以內。</option>
+            <option value="450">A路線（2/5）：左轉步行約450M。</option>
+            <option value="450">可以在硬幣隱藏點 450M 範圍內的標識符中找到完美的東西。</option>
+            <option value="480">在硬幣所在位置480M的範圍內，有一個東西可以有不同的內部。</option>
+            <option value="500">A Set：在硬幣的500M範圍內，有一個只能容納一個的東西的親戚。</option>
+            <option value="500">幣點500M以內，缺乏持久性。</option>
+            <option value="599">距離硬幣藏匿點 599m 範圍內至少可以找到 3 個機會。</option>
+            <option value="600">距離硬幣位置不到600M的地方似乎有什麼有趣的東西。</option>
+            <option value="600">該幣距離某個地方600M以內可能有補貼。</option>
+            <option value="600">距離硬幣地點600m以內可以找到海裡的果實。</option>
+            <option value="602">飢餓的人類可能會在硬幣藏身點 602m 範圍內變得快樂。</option>
+            <option value="608">硬幣將位於冷物體 608m 範圍內。</option>
+            <option value="700">投幣處700M以內有廁所。</option>
+            <option value="700">如果您想記住單詞，您可能距離硬幣的藏匿點不到 700m。</option>
+            <option value="705">如果您看到用於移動的物體的 2D 版本，則您可能位於硬幣所在位置 705m 的範圍內。</option>
+            <option value="1200">您可能會在距離硬幣 1.2 公里的範圍內找到富有創造力的人。</option>
+        </select>
+
+          <button onclick="submitSelection()">Submit</button>
+      </div>
+  </div>
+
+
+  <script>
+    // Elements for modal and button
+    const modalBackground = document.getElementById("modalBackground");
+    const openModalButton = document.getElementById("openModalButton");
+    const closeButton = document.getElementById("closeButton");
+    const toCSV = document.getElementById("toCSV");
+    const displayPlace = document.getElementById("location-output2");
+
+    toCSV.onclick = function() {
+      var tdata = listAllData();
+      displayPlace.innerHTML = JSON.stringify(tdata);
+    }
+
+    // Open modal when button is clicked
+    openModalButton.onclick = function() {
+        modalBackground.style.display = "block";
+    }
+
+    // Close modal when close button is clicked
+    closeButton.onclick = function() {
+        modalBackground.style.display = "none";
+    }
+
+    // Close modal when clicking outside the modal box
+    window.onclick = function(event) {
+        if (event.target == modalBackground) {
+            modalBackground.style.display = "none";
+        }
+    }
+
+    // Function to handle dropdown selection
+    function submitSelection() {
+        const dropdown = document.getElementById("dropdownMenu");
+        const selectedOption = dropdown.options[dropdown.selectedIndex];
+    
+        if (selectedOption) {
+            alert("You selected: " + selectedOption.value);
+            saveLocation(selectedOption.value, selectedOption.text)
+            modalBackground.style.display = "none"; // Close the modal after selection
+        } else {
+            alert("Please select an option.");
+        }
+    }
+
+    function saveLocation(name, description) {
+            // Check if the Geolocation API is available
+            if (navigator.geolocation) {
+                // Request the current position
+                navigator.geolocation.getCurrentPosition(
+                function (position) {
+                  saveLocationToLS(position, name, description)
+                }
+                , showError, {
+                  enableHighAccuracy: true,
+                  maximumAge: 0   // Do not use cached position
+                });
+            } else {
+                document.getElementById("location-output").innerText = "Geolocation is not supported by this browser.";
+            }
+        }
+    function saveLocationToLS (position, name, description) {
+        // Get latitude and longitude
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+        addDataToLocalStorage({ name: name, description: description, lat: latitude, lng: longitude });
+    }
+
+    function CopyToClipboard(id){
+        var r = document.createRange();
+        r.selectNode(document.getElementById(id));
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(r);
+        try {
+            document.execCommand('copy');
+            window.getSelection().removeAllRanges();
+        } catch (err) {
+            console.log('Unable to copy!');
+        }
+    }
+</script>
   </body>
+
+
 </html>

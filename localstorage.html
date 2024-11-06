@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Map with Multiple Points</title>
+    <script src="/static/localstorage.js"></script>
+
+    <script>
+  
+    </script>
+    <style>
+    
+    .container1 {
+        display: flex; /* or inline-flex */
+        
+      }
+      .container1 div{ 
+        margin:20px;
+      }
+
+      table td {
+        padding:20px;
+      }
+
+    </style>
+  </head>
+  <body>
+    <div>
+    <h3>Local Storage</h3>
+    <div class="container1">
+      <div><button type="button" onclick="CopyToClipboard('location-output2')">Copy text</button></div>
+      <div><button id="toCSV">CSV </button></div>
+    </div>
+    <div id="location-output2">  </div>
+
+
+
+  <script>
+      const toCSV = document.getElementById("toCSV");
+
+    const displayPlace = document.getElementById("location-output2");
+    toCSV.onclick = function() {
+      reloadLS();
+    }
+
+    function reloadLS() {
+
+      var tdata = listAllData();
+      console.log(tdata);
+      var tableDiv = "<table>";
+      tdata.forEach((item, index) => {
+        tableDiv += `<tr> <td>${item.description}</td>  <td>${item.name}</td>  <td> <button onclick="deleteIt( '${item.id}' )"> Delete</button></td>  <tr> `;
+      });
+      tableDiv += "</table>";
+      displayPlace.innerHTML = tableDiv;
+
+    }
+
+    function deleteIt(no) {
+
+      if (no) 
+        localStorage.removeItem(`${no}`);
+      alert(`${no} is deleted`);
+      reloadLS();
+    }
+
+
+    function CopyToClipboard(id){
+        var r = document.createRange();
+        r.selectNode(document.getElementById(id));
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(r);
+        try {
+            document.execCommand('copy');
+            window.getSelection().removeAllRanges();
+        } catch (err) {
+            console.log('Unable to copy!');
+        }
+    }
+</script>
+  </body>
+
+
+</html>

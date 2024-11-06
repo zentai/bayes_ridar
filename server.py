@@ -48,6 +48,10 @@ def update_likelihood():
 def serve_index():
     return send_from_directory(app.root_path, "index.html")
 
+@app.route("/ls")
+def local_storage():
+    return send_from_directory(app.root_path, "localstorage.html")
+
 
 @app.route("/static/<path:filename>")
 def serve_static(filename):
