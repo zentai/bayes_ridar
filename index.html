@@ -342,16 +342,22 @@
           border-radius: 4px;
           background-color: #f1f1f1;
         }
+
+        .bigButton {
+          padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
     </style>
   </head>
   <body onload="initMap()">
     <div >
       <div class="container1">
           <div>
-            <button onclick="getLocation()">Load</button>
+            <button class="bigButton" onclick="getLocation()">Load</button>
           </div>
           <div>
-            <select id="radius">
+            <select id="radius" class="bigButton">
               <option value="5">5</option>
               <option value="10">10</option>
               <option value="30">30</option>
@@ -361,7 +367,7 @@
             </select>
           </div>
           <div>
-            <select id="places">
+            <select id="places" class="bigButton">
               <option value="establishment">establishment</option>
               <option value="restaurant">restaurant</option>
               <option value="cafe">cafe</option>
@@ -383,21 +389,20 @@
 
 
     </div>
-    <div > <input id="location-output" type="text" value="">  </div>
-
-    <h3>Map with Multiple Points</h3>
+    <!-- <div > <input id="location-output" type="text" value="">  </div>
+    <h3>Map with Multiple Points</h3> -->
     <div id="map"></div>
 
     <table>
       <tr>
         <td>
-          <div><button id="toCSV">CSV</button></div>
+          <div><button id="toCSV" class="bigButton">CSV</button></div>
         </td>
         <td>
-          <div><button type="button" onclick="CopyToClipboard('location-output2')">Copy text</button></div>
+          <div><button type="button" class="bigButton" onclick="CopyToClipboard('location-output2')">Copy text</button></div>
         </td>
         <td>
-          <div> <a href="/ls"><button type="button" onclick="CopyToClipboard('location-output2')">LocalStorage Edit</button></a></div>
+          <div> <a href="/ls"><button type="button" class="bigButton" onclick="CopyToClipboard('location-output2')">LocalStorage Edit</button></a></div>
         </td>
       </tr>
     </table>
@@ -411,7 +416,7 @@
           <p>Please select an option from the dropdown:</p>
           
           <!-- Dropdown menu -->
-          <select id="dropdownMenu"> <option value="40">這枚硬幣將隱藏在距離工廠 82 步之遙的地方。</option>
+          <select id="dropdownMenu" > <option value="40">這枚硬幣將隱藏在距離工廠 82 步之遙的地方。</option>
             <option value="100">距離硬幣不到 100m 的地方會有黑暗的東西。</option>
             <option value="120">如果您看到高於 1.69m 的物體，則您可能位於硬幣的 120m 範圍內。</option>
             <option value="200">看到高於人類平均身高的數字了嗎？您可能位於硬幣所在位置 200m 範圍內。</option>
