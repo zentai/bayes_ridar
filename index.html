@@ -211,6 +211,24 @@
         });
       }
 
+      function downloadCSV() {
+        let storedData = JSON.parse(localStorage.getItem("locations")) || [];
+        let csvContent = "data:text/csv;charset=utf-8,Latitude,Longitude,Radius,Description\n";
+
+        storedData.forEach(item => {
+          let row = `${item.lat},${item.lng},${item.radius},${item.description}`;
+          csvContent += row + "\n";
+        });
+
+        var encodedUri = encodeURI(csvContent);
+        var link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "locations.csv");
+        document.body.appendChild(link);
+
+        link.click();
+        document.body.removeChild(link);
+      }
     </script>
     <style>
       #map {
@@ -268,6 +286,7 @@
         </select>
       </div>
       <div><button class="bigButton" onclick="plotSelectedPoint()">Plot</button></div>
+      <div><button class="bigButton" onclick="downloadCSV()">Export CSV</button></div>
     </div>
     <div id="map"></div>
     <div id="location-output2"></div>
