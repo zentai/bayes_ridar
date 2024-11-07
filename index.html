@@ -267,12 +267,10 @@
     </style>
   </head>
   <body onload="initMap(); loadSavedPoints();">
+    <div><button class="bigButton" onclick="downloadCSV()">Export CSV</button><button class="bigButton" onclick="getLocation()">Load</button></div>
     <div id="map"></div>
     <div id="location-output2"></div>
-
     <div class="container1">
-      <div><button class="bigButton" onclick="downloadCSV()">Export CSV</button></div>
-      <div><button class="bigButton" onclick="getLocation()">Load</button></div>
       <div>
         <select id="dropdownMenu" class="bigButton">
           <option value="300"> number 4 </option>
@@ -387,8 +385,9 @@
           <option value="1">[X] 停车场 </option>
         </select>
       </div>
-      <br/>
-      <div><button class="bigButton" onclick="plotSelectedPoint()">Plot</button></div>
+      <p>
+        <div><button class="bigButton" onclick="plotSelectedPoint()">Plot</button></div>
+      </p>
 
     </div>
   </body>
