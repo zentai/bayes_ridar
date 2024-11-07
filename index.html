@@ -134,15 +134,30 @@
             const radius = parseInt(selectedOption.value);
             const description = selectedOption.text;
 
-            const svgMarker = {
-              path: "M-1.547 12l6.563-6.609-1.406-1.406-5.156 5.203-2.063-2.109-1.406 1.406zM0 0q2.906 0 4.945 2.039t2.039 4.945q0 1.453-0.727 3.328t-1.758 3.516-2.039 3.070-1.711 2.273l-0.75 0.797q-0.281-0.328-0.75-0.867t-1.688-2.156-2.133-3.141-1.664-3.445-0.75-3.375q0-2.906 2.039-4.945t4.945-2.039z",
-              fillColor: "blue",
-              fillOpacity: 0.6,
-              strokeWeight: 0,
-              rotation: 0,
-              scale: 2,
-              anchor: new google.maps.Point(0, 20),
-            };
+            let svgMarker;
+
+            // Modify the marker icon if radius is 1
+            if (radius === 1) {
+              svgMarker = {
+                path: google.maps.SymbolPath.CROSS,
+                fillColor: "red",
+                fillOpacity: 1.0,
+                strokeWeight: 2,
+                strokeColor: "red",
+                scale: 10,
+                anchor: new google.maps.Point(0, 0),
+              };
+            } else {
+              svgMarker = {
+                path: "M-1.547 12l6.563-6.609-1.406-1.406-5.156 5.203-2.063-2.109-1.406 1.406zM0 0q2.906 0 4.945 2.039t2.039 4.945q0 1.453-0.727 3.328t-1.758 3.516-2.039 3.070-1.711 2.273l-0.75 0.797q-0.281-0.328-0.75-0.867t-1.688-2.156-2.133-3.141-1.664-3.445-0.75-3.375q0-2.906 2.039-4.945t4.945-2.039z",
+                fillColor: "blue",
+                fillOpacity: 0.6,
+                strokeWeight: 0,
+                rotation: 0,
+                scale: 2,
+                anchor: new google.maps.Point(0, 20),
+              };
+            }
 
             new google.maps.Marker({
               position: { lat: latitude, lng: longitude },
@@ -171,6 +186,7 @@
           console.error("Geolocation is not supported by this browser.");
         }
       }
+
 
       function saveToLocalStorage(data) {
         let storedData = JSON.parse(localStorage.getItem("locations")) || [];
@@ -251,10 +267,15 @@
     </style>
   </head>
   <body onload="initMap(); loadSavedPoints();">
+    <div id="map"></div>
+    <div id="location-output2"></div>
+
     <div class="container1">
+      <div><button class="bigButton" onclick="downloadCSV()">Export CSV</button></div>
       <div><button class="bigButton" onclick="getLocation()">Load</button></div>
       <div>
         <select id="dropdownMenu" class="bigButton">
+          <option value="300"> number 4 </option>
           <option value="300"> 監視 </option>
           <option value="50"> 裂縫 </option>
           <option value="34.5"> 太陽能路燈 </option>
@@ -318,7 +339,7 @@
           <option value="311"> 減少連接的東西 </option>
           <option value="500"> 缺乏永久性（有成本） </option>
           <option value="50"> 漸漸消失 </option>
-          <option value="1000"> 脾氣、力量及朋友（大型收藏、作家、聲譽） </option>
+          <option value="1000"> 脾氣力量朋友（作品集、作家、聲譽） </option>
           <option value="600"> 不固定的東西 </option>
           <option value="399"> 觸發睡眠 </option>
           <option value="500"> 只能一個人 </option>
@@ -340,12 +361,35 @@
           <option value="333"> 代碼 </option>
           <option value="680"> swkii的最愛 </option>
           <option value="440"> 名字中找到的第二 </option>
+          <option value="1">[X] 青铜灯柱 </option>
+          <option value="1">[X] 公共电话 </option>
+          <option value="1">[X] 屋顶花园 </option>
+          <option value="1">[X] 健身角落 </option>
+          <option value="1">[X] 游乐场隧道 </option>
+          <option value="1">[X] 自行车道 </option>
+          <option value="1">[X] 站立廣告牌 </option>
+          <option value="1">[X] HDB楼梯间 </option>
+          <option value="1">[X] 灌木丛 </option>
+          <option value="1">[X] 鞋子泥泞 </option>
+          <option value="1">[X] 壁画 </option>
+          <option value="1">[X] 红灯柱 </option>
+          <option value="1">[X] 公园水龙头 </option>
+          <option value="1">[X] 户外风扇 </option>
+          <option value="1">[X] 玻璃墙咖啡馆 </option>
+          <option value="1">[X] 大理石长凳 </option>
+          <option value="1">[X] ATM机 </option>
+          <option value="1">[X] 桥下 </option>
+          <option value="1">[X] 空调通风口 </option>
+          <option value="1">[X] 交通灯 </option>
+          <option value="1">[X] NLB分馆 </option>
+          <option value="1">[X] 鱼尾狮雕像 </option>
+          <option value="1">[X] 出租车站 </option>
+          <option value="1">[X] 停车场 </option>
         </select>
       </div>
+      <br/>
       <div><button class="bigButton" onclick="plotSelectedPoint()">Plot</button></div>
-      <div><button class="bigButton" onclick="downloadCSV()">Export CSV</button></div>
+
     </div>
-    <div id="map"></div>
-    <div id="location-output2"></div>
   </body>
 </html>
