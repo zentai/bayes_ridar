@@ -187,6 +187,9 @@
         }
       }
 
+      function clearLocalStorage() {
+        localStorage.removeItem("locations");
+      }
 
       function saveToLocalStorage(data) {
         let storedData = JSON.parse(localStorage.getItem("locations")) || [];
@@ -267,7 +270,7 @@
     </style>
   </head>
   <body onload="initMap(); loadSavedPoints();">
-    <div><button class="bigButton" onclick="downloadCSV()">Export CSV</button><button class="bigButton" onclick="getLocation()">Load</button></div>
+    <div><button class="bigButton" onclick="downloadCSV()">Export CSV</button><button class="bigButton" onclick="getLocation()">Load</button><button class="bigButton" onclick="clearLocalStorage()">Reset</button></div>
     <div id="map"></div>
     <div id="location-output2"></div>
     <div class="container1">
